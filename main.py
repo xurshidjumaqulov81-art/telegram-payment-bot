@@ -1,118 +1,82 @@
 import os
 import logging
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import (
-    ApplicationBuilder,
-    CommandHandler,
-    MessageHandler,
-    ContextTypes,
-    filters
-)
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 
 TOKEN = os.getenv("BOT_TOKEN")
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 
-# START
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    text = """
-👋 Ассалому алайкум!
-
-🤖 Мен ХЖ тўлов ёрдамчи ботиман.
-
-Ушбу бот орқали сиз:
-💰 аккаунтингизни тўлдириш учун сўров юборишингиз мумкин.
-
-📌 Илтимос, жараённи бошлаш учун
-қуйидаги тугмани босинг.
-"""
-
-    keyboard = [["▶️ Давом этиш"]]
-
-    reply_markup = ReplyKeyboardMarkup(
-        keyboard,
-        resize_keyboard=True
+    text = (
+        "👋 Ассалому алайкум!\n\n"
+        "🤖 Мен ХЖ тўлов ёрдамчи ботиман.\n\n"
+        "Ушбу бот орқали сиз:\n"
+        "💰 аккаунтингизни тўлдириш учун сўров юборишингиз мумкин.\n\n"
+        "📌 Илтимос, жараённи бошлаш учун қуйидаги тугмани босинг."
     )
 
-    await update.message.reply_text(text, reply_markup=reply_markup)
+    keyboard = [["▶️ Давом этиш"]]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+    if update.message:
+        await update.message.reply_text(text, reply_markup=reply_markup)
 
 
-# CONTINUE BUTTON
-async def handle_continue(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message or not update.message.text:
+        return
 
-    if update.message.text == "▶️ Давом этиш":
+    text = update.message.text.strip()
+    step = context.user_data.get("step")
 
-        text = """
-🆔 1-қадам: ID рақамингизни киритинг
-
-Илтимос, аккаунтингизга тегишли
-ID рақамни киритинг.
-
-⚠️ ID рақам 7 хонали бўлиши керак.
-
-Масалан:
-0012345
-"""
-
-        await update.message.reply_text(text)
+    if text == "▶️ Давом этиш":
         context.user_data["step"] = "id"
+        await update.message.reply_text(
+            "🆔 1-қадам: ID рақамингизни киритинг\n\n"
+            "Илтимос, аккаунтингизга тегишли ID рақамни киритинг.\n\n"
+            "⚠️ ID рақам 7 хонали бўлиши керак.\n\n"
+            "Масалан:\n"
+            "0012345"
+        )
+        return
 
-
-# ID INPUT
-async def handle_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if context.user_data.get("step") == "id":
-
-        user_id = update.message.text.strip()
-
-        if not user_id.isdigit() or len(user_id) != 7:
-
+    if step == "id":
+        if not text.isdigit() or len(text) != 7:
             await update.message.reply_text(
-                "❌ ID рақам нотўғри.\n\n"
-                "Илтимос 7 хонали ID киритинг.\n"
-                "Масалан: 0012345"
+                "❌ ID рақам нотўғри киритилди.\n\n"
+                "Илтимос, 7 хонали ID рақам киритинг.\n\n"
+                "Масалан:\n"
+                "0012345"
             )
             return
 
-        context.user_data["account_id"] = user_id
+        context.user_data["account_id"] = text
+        context.user_data["step"] = "done"
 
         await update.message.reply_text(
-            "✅ ID қабул қилинди.\n\n"
-            "Кейинги қадамда исм фамилия киритилади."
+            "✅ ID рақам қабул қилинди.\n\n"
+            "Кейинги қадамда исм ва фамилияни қўшамиз."
         )
+        return
 
 
 def main():
+    if not TOKEN:
+        raise ValueError("BOT_TOKEN topilmadi")
 
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_continue))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_id))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
 
     print("Bot ishga tushdi")
-
     app.run_polling()
 
-
-if __name__ == "__main__":
-    main()        "Масалан: 0012345"
-    )
-
-def main():
-
-    app = ApplicationBuilder().token(TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("id", id_command))
-
-    print("Bot ishga tushdi")
-
-    app.run_polling()
 
 if __name__ == "__main__":
     main()
