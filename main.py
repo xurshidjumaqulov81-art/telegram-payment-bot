@@ -190,7 +190,7 @@ def append_excel_row(data: dict) -> int:
             data["telegram_username"],
             data["account_id"],
             data["full_name"],
-            data["amount_usd"],
+str(data["amount_usd"]),
             data["rate_uzs"],
             data["amount_uzs"],
             data["proof_path"],
